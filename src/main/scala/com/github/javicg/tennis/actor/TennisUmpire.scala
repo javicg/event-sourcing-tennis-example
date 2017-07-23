@@ -26,6 +26,9 @@ class TennisUmpire(id: String) extends PersistentActor with ActorLogging {
         update(event)
       }
 
+    case GetMatchState =>
+      sendMatchStateTo(sender())
+
     case PlayPoint =>
       serve(_match.nextServe, sender())
   }
@@ -51,18 +54,22 @@ class TennisUmpire(id: String) extends PersistentActor with ActorLogging {
       persist(PlayerScored(player.opponent, serving)) { event =>
         log.info(s"Point for ${player.opponent}")
         update(event)
-        replyTo(controller)
+        sendMatchStateTo(controller)
         context.become(receiveCommand)
       }
   }
 
-  private def replyTo(controller: ActorRef) = {
-    if (_match.isFinished) {
+  private def sendMatchStateTo(ref: ActorRef) = {
+    if (!_match.isStarted) {
+      log.debug("Match has not started yet!")
+      ref ! MatchNotStarted
+    } else if (_match.isFinished) {
       log.info("Match finished!")
       log.info(s"Player 1 [${_match.scores(Player1)}] - Player 2[${_match.scores(Player2)}]")
-      controller ! MatchFinished
+      ref ! MatchFinished
     } else {
-      controller ! MatchInProgress(_match.scores(Player1), _match.scores(Player2))
+      log.debug(s"Match in progress. Player 1 [${_match.scores(Player1)}] - Player 2[${_match.scores(Player2)}]")
+      ref ! MatchInProgress(_match.scores(Player1), _match.scores(Player2))
     }
   }
 
@@ -82,8 +89,10 @@ object TennisUmpire {
   // Protocol
   case class NewMatch(name1: String, name2: String)
   case object PlayPoint
+  case object GetMatchState
 
   sealed trait MatchState
+  case object MatchNotStarted extends MatchState
   case class MatchInProgress(score1: Int, score2: Int) extends MatchState
   case object MatchFinished extends MatchState
 

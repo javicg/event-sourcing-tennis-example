@@ -26,6 +26,7 @@ final case class Match(scores: Map[Player, Int],
     )
   }
 
+  def isStarted: Boolean = scores.nonEmpty
   def isFinished: Boolean = scores.exists(p => p._2 == 10)
 
   def getRef(player: Player): ActorRef = players(player)
