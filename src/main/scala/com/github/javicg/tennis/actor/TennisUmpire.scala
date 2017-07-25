@@ -6,7 +6,7 @@ import com.github.javicg.tennis.actor.PlayerActor._
 import com.github.javicg.tennis.actor.TennisUmpire._
 import com.github.javicg.tennis.model._
 
-class TennisUmpire(id: String) extends PersistentActor with ActorLogging {
+class TennisUmpire(id: String) extends PersistentActor with RealPlayers with ActorLogging {
   override val persistenceId: String = id
 
   private var _match = Match()
@@ -74,9 +74,8 @@ class TennisUmpire(id: String) extends PersistentActor with ActorLogging {
   }
 
   private def update(event: MatchStarted) = {
-    _match = _match.init(
-      context.actorOf(Props(classOf[PlayerActor], event.name1), "player1"),
-      context.actorOf(Props(classOf[PlayerActor], event.name2), "player2"))
+    val (player1, player2) = newPlayers(event.name1, event.name2)
+    _match = _match.init(player1, player2)
   }
 
   private def update(event: PlayerScored) = {
