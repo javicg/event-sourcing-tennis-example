@@ -52,7 +52,7 @@ class TennisUmpireTest extends TestKit(ActorSystem("tennis-umpire-test"))
       player2.expectMsg(Play)
     }
 
-    "keep score after a restart" in new Fixture("umpire-003") {
+    "keep score and serving order after a restart" in new Fixture("umpire-003") {
       val umpire = newUmpire()
       umpire ! NewMatch("Rafa Nadal", "Roger Federer")
       umpire ! PlayPoint
